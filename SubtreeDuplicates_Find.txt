@@ -1,0 +1,86 @@
+#===================================================================================================
+# 1) Define 3 Input parameter in TI-Process Tab "Advanced", Subtab "Parameters"
+#===================================================================================================
+DimensionName   String
+ParentElement   String
+DeleteDuplicates    Numeric   Default = 1
+TempSubset   String   Default = zzSubtreeDuplicatesTemp
+TempSubsetDuplicates   String   Default = zzSubtreeDuplicatesFound
+TempSubsetDuplicatesKeep    Numeric   Default = 1
+TreeLevel    Numeric    Default = 0
+
+
+#===================================================================================================
+# 2) Insert the following code in TI-Process Tab "Advanced", Subtab "Prolog"
+#===================================================================================================
+IF( DimensionExists( DimensionName ) = 0 );
+  # Dimension name doesn't exist
+  ProcessError;
+ENDIF;
+
+IF( SubsetExists( DimensionName , TempSubset ) = 0 );
+  SubsetCreate( DimensionName , TempSubset );
+ELSEIF( TreeLevel = 0 );
+  SubsetDeleteAllElements( DimensionName , TempSubset );
+ENDIF;
+
+IF( SubsetExists( DimensionName , TempSubsetDuplicates ) = 0 );
+  SubsetCreate( DimensionName , TempSubsetDuplicates );
+ELSEIF( TreeLevel = 0 );
+  SubsetDeleteAllElements( DimensionName , TempSubsetDuplicates );
+ENDIF;
+
+# Loop through all child elements of ParentElement on the next level and
+InitialTreeLevel = TreeLevel;
+TreeLevel = TreeLevel +1;
+nComp = ElCompN( DimensionName, ParentElement );
+iCount = 1;
+While ( iCount <= nComp);
+  sChild = ElComp( DimensionName,  ParentElement, iCount );
+
+
+  isInSubset = 0;
+  sz = SubsetGetSize( DimensionName , TempSubset);
+
+  nCount = 1;
+  WHILE( nCount  <= sz);
+    ElName = SubsetGetElementName( DimensionName , TempSubset, nCount );
+    IF( ElName @= sChild );
+      isInSubset = 1;
+      nCount = sz + 1;
+    ENDIF;
+    nCount  = nCount + 1;
+  END;
+
+  SubsetElementInsert( DimensionName , TempSubset , sChild , 1);
+  IF( isInSubset > 0 );
+    SubsetElementInsert( DimensionName , TempSubsetDuplicates , sChild , 1);
+    IF( DeleteDuplicates = 1 );
+      DimensionElementComponentDeleteDirect( DimensionName , ParentElement , sChild );
+      iCount = iCount -1;
+      nComp = nComp -1;
+    ENDIF;
+  ENDIF;
+
+  IF( DTYPE( DimensionName,  sChild ) @= 'C' &  ( isInSubset = 0 % DeleteDuplicates = 0 ) );
+    ExecuteProcess( GetProcessName() , 'DimensionName' , DimensionName , 'ParentElement', sChild , 
+                                'DeleteDuplicates', DeleteDuplicates, 'TempSubset', TempSubset, 'TempSubsetDuplicates', TempSubsetDuplicates, 'TempSubsetDuplicatesKeep', TempSubsetDuplicatesKeep , 
+                                'TreeLevel' , TreeLevel );
+  ENDIF;
+          
+  iCount = iCount + 1 ;
+End;
+
+#===================================================================================================
+# 3) Insert the following code in TI-Process Tab "Advanced", Subtab "Epilog"
+#===================================================================================================
+IF( InitialTreeLevel = 0 );
+  SubsetDestroy( DimensionName , TempSubset );
+
+  IF( TempSubsetDuplicatesKeep <> 1 );
+    SubsetDestroy( DimensionName , TempSubsetDuplicates );
+  ENDIF;
+
+ENDIF;
+
+

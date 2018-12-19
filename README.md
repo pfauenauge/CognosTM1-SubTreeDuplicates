@@ -7,11 +7,20 @@ This repository provides a ready to use, general purpose TI-process for finding 
 # Functions and Options
 - Name of dimension
 - Element name of subtree root
+- Delete duplicates(=1), otherwise elements are not removed from consolidation
+- Temporary Subset: Only need to change this in case of name collisions
+- Subset name where the found duplicate elements are stored. You can use it to post-process the changes made to the dimension
+- Keep subset with duplicates (=1). If you don't need the subset of duplicate elements, the process will delete it at the end (=0)
+- Last process parameter: **Don't change it!**
 
 # Setup
-## Option 1
+## Option 1 (preferred)
+Copy file [SubtreeDuplicates_Find.pro](https://github.com/pfauenauge/CognosTM1-SubTreeDuplicates/blob/master/SubtreeDuplicates_Find.pro) to your TM1 data directory and restart the TM1 server
 
 ## Option 2
+- Create a new TM1 process
+- Define the sections in the process based on the description in [SubtreeDuplicates_Find.txt](https://github.com/pfauenauge/CognosTM1-SubTreeDuplicates/blob/master/SubtreeDuplicates_Find.txt)
+- Save process with any name you like
 
 # Example
 This example shows a TM1 dimension with a subtree **C1**. Here we want to remove all duplicates within this subtree **C1**. The duplicates are:
